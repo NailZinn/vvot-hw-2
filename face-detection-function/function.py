@@ -16,7 +16,8 @@ def handler(event, context):
   )
   q_client = session.client(
     service_name='sqs',
-    endpoint_url='https://message-queue.api.cloud.yandex.net'
+    endpoint_url='https://message-queue.api.cloud.yandex.net',
+    region_name='ru-central1'
   )
 
   get_object_response = s3_client.get_object(Bucket=bucket_id, Key=object_id)
@@ -36,8 +37,9 @@ def handler(event, context):
 
   for (x, y, w, h) in faces:
     payload = json.dumps({
+      'bucket_id': bucket_id,
       'object_id': object_id,
-      'face': [[x, y], [x+w, y], [x+w, y+h], [x, y+h]]
+      'face_rect': [x, y, w, h]
     })
     q_client.send_message(
       QueueUrl='vvot31-task',
