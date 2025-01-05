@@ -28,9 +28,9 @@ public static class Utils
         await SendAsync(chatId, parameters);
     }
 
-    public static async Task SendPhotoAsync(long chatId, string type, string photoName)
+    public static async Task SendPhotoAsync(long chatId, string photoPathSuffix)
     {
-        KeyValuePair<string, string>[] parameters = [new("photo", $"{ApiGatewayUrl}?{type}={photoName}")];
+        KeyValuePair<string, string>[] parameters = [new("photo", $"{ApiGatewayUrl}{photoPathSuffix}")];
 
         await SendAsync(chatId, parameters);
     }

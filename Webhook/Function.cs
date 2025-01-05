@@ -50,7 +50,7 @@ public class Handler
                 return new Response(200, "Ok");
             }
 
-            await Utils.SendPhotoAsync(update.Message.Chat.Id, "face", unnamedFaceObject.Key);
+            await Utils.SendPhotoAsync(update.Message.Chat.Id, $"?face={unnamedFaceObject.Key}");
             return new Response(200, "Ok");
         }
 
@@ -90,7 +90,7 @@ public class Handler
 
             var originalKey = getFaceObjectMetadataResponse.Metadata["object_id"];
 
-            await Utils.SendPhotoAsync(update.Message.Chat.Id, "photo", originalKey);
+            await Utils.SendPhotoAsync(update.Message.Chat.Id, $"/photos/{originalKey}");
             return new Response(200, "Ok");
         }
 

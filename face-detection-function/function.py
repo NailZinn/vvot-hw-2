@@ -1,13 +1,13 @@
 import json
 import boto3.session
+import os
 import cv2
 import cv2.data
 import numpy as np
 
 def handler(event, context):
-  body = json.loads(event.body)
-  bucket_id = body.messages[0].details.bucket_id
-  object_id = body.messages[0].details.object_id
+  bucket_id = event['messages'][0]['details']['bucket_id']
+  object_id = event['messages'][0]['details']['object_id']
 
   session = boto3.session.Session()
   s3_client = session.client(
@@ -17,7 +17,7 @@ def handler(event, context):
   q_client = session.client(
     service_name='sqs',
     endpoint_url='https://message-queue.api.cloud.yandex.net',
-    region_name='ru-central1'
+    region_name=os.environ['AWS_DEFAULT_REGION']
   )
 
   get_object_response = s3_client.get_object(Bucket=bucket_id, Key=object_id)
@@ -39,9 +39,9 @@ def handler(event, context):
     payload = json.dumps({
       'bucket_id': bucket_id,
       'object_id': object_id,
-      'face_rect': [x, y, w, h]
+      'face_rect': [int(x), int(y), int(w), int(h)]
     })
     q_client.send_message(
-      QueueUrl='vvot31-task',
+      QueueUrl=os.environ['TASK_QUEUE'],
       MessageBody=payload
     )
