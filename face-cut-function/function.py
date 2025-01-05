@@ -31,8 +31,8 @@ def handler(event, context):
     Bucket='vvot31-faces',
     Key='%s.jpg' % str(uuid.uuid4()),
     Body=face_encoded,
+    ContentType='image/jpeg',
     Metadata={
-      'bucket_id': cut_face_data.bucket_id,
       'object_id': cut_face_data.object_id
     }
   )
