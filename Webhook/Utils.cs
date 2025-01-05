@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Amazon.S3;
+using Amazon.S3.Model;
 
 namespace Webhook;
 
@@ -23,27 +25,30 @@ public static class Utils
 
     public static async Task SendMessageAsync(long chatId, string text)
     {
-        KeyValuePair<string, string>[] parameters = [new("text", text)];
+        KeyValuePair<string, string?>[] parameters = [new("text", text)];
 
-        await SendAsync(chatId, parameters);
+        await SendAsync(chatId, parameters, "sendMessage");
     }
 
-    public static async Task SendPhotoAsync(long chatId, string photoPathSuffix)
+    public static async Task SendPhotoAsync(long chatId, string photoPathSuffix, string? caption = null)
     {
-        KeyValuePair<string, string>[] parameters = [new("photo", $"{ApiGatewayUrl}{photoPathSuffix}")];
+        KeyValuePair<string, string?>[] parameters = [
+            new("photo", $"{ApiGatewayUrl}{photoPathSuffix}"),
+            new("caption", caption)
+        ];
 
-        await SendAsync(chatId, parameters);
+        await SendAsync(chatId, parameters, "sendPhoto");
     }
 
-    private static async Task SendAsync(long chatId, IEnumerable<KeyValuePair<string, string>> parameters)
-    {        
+    private static async Task SendAsync(long chatId, IEnumerable<KeyValuePair<string, string?>> parameters, string method)
+    {
         using var httpClient = new HttpClient();
         using var httpRequest = new HttpRequestMessage
         {
             Method = HttpMethod.Post,
-            RequestUri = new Uri(string.Format(TgBotUrlFormat, "sendPhoto"))
+            RequestUri = new Uri(string.Format(TgBotUrlFormat, method))
         };
-        httpRequest.Content = new FormUrlEncodedContent(new Dictionary<string, string>(parameters)
+        httpRequest.Content = new FormUrlEncodedContent(new Dictionary<string, string?>(parameters)
         {
             ["chat_id"] = chatId.ToString(),
         });
@@ -51,28 +56,25 @@ public static class Utils
         await httpClient.SendAsync(httpRequest);
     }
 
-    public static async Task<string?> GetFilePathAsync(string fileId)
+    public static AmazonS3Client GetS3Client()
     {
-        using var httpClient = new HttpClient();
-        using var httpRequest = new HttpRequestMessage
+        var s3Config = new AmazonS3Config
         {
-            Method = HttpMethod.Get,
-            RequestUri = new Uri(string.Format(TgBotUrlFormat, "getFile"))
+            ServiceURL = "https://s3.yandexcloud.net"
         };
-        httpRequest.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+
+        return new AmazonS3Client(AwsAccessKeyId, AwsSecretAccessKey, s3Config);
+    }
+
+    public static async Task<ListObjectsV2Response> ListFaceObjectsAsync(AmazonS3Client? s3Client = null)
+    {
+        s3Client ??= GetS3Client();
+
+        var listObjectsRequest = new ListObjectsV2Request
         {
-            ["file_id"] = fileId
-        });
+            BucketName = FacesBucketName,
+        };
 
-        var httpResponse = await httpClient.SendAsync(httpRequest);
-
-        if (!httpResponse.IsSuccessStatusCode) return null;
-
-        var dataAsString = await httpResponse.Content.ReadAsStringAsync();
-
-        return JsonSerializer.Deserialize<JsonElement>(dataAsString)
-            .GetProperty("result")
-            .GetProperty("file_path")
-            .GetString();
+        return await s3Client.ListObjectsV2Async(listObjectsRequest);
     }
 }
