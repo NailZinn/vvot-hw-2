@@ -1,0 +1,6 @@
+cloud_id = ""
+folder_id = ""
+tg_bot_key = ""
+aws_access_key_id = ""
+aws_secret_access_key = ""
+aws_default_region = ""
